@@ -1,0 +1,7 @@
+{
+  "name": "browseraichat",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "python -m http.server 8080 -d ."
+  }
+}

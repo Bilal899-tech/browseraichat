@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexagaze AI Chat</title>
+  <meta name="author" content="Founder Bilal - nexagaze">
+  <meta name="keywords" content="browser AI chat, Transformers.js, client-side AI chatbot, flan-t5-small, machine learning, nexagaze, bilal, AI, open source, behavior tracking">
+  <link rel="icon" href="data:,">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #0f172a; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+    .container { background: #1e293b; padding: 2rem; border-radius: 16px; width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    h2 { color: #38bdf8; text-align: center; margin-bottom: 1.5rem; font-size: 1.5rem; }
+    .status { text-align: center; color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem; }
+    .status.loading { color: #facc15; }
+    .status.ready { color: #22c55e; }
+    .status.thinking { color: #38bdf8; }
+    .chat-box { background: #0f172a; border-radius: 10px; padding: 1rem; height: 260px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .chat-box .msg { padding: 0.5rem 0.75rem; border-radius: 8px; max-width: 85%; word-wrap: break-word; white-space: pre-wrap; }
+    .chat-box .user-msg { background: #38bdf8; color: #0f172a; align-self: flex-end; }
+    .chat-box .ai-msg { background: #334155; color: #e2e8f0; align-self: flex-start; }
+    .progress-wrap { height: 6px; background: #0f172a; border-radius: 4px; margin-bottom: 1rem; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #22c55e); border-radius: 4px; transition: width 0.3s ease; }
+    .input-row { display: flex; gap: 0.5rem; }
+    .input-row input { flex: 1; padding: 0.7rem 1rem; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #e2e8f0; outline: none; font-size: 0.9rem; }
+    .input-row input:focus { border-color: #38bdf8; }
+    .input-row button { padding: 0.7rem 1.4rem; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .input-row button:hover { background: #0ea5e9; }
+    .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Nexagaze AI Chat</h2>
+    <p id="status" class="status loading">Loading model...</p>
+    <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
+    <div id="chatBox" class="chat-box">
+      <div class="msg ai-msg">Hello! Ask me anything?</div>
+    </div>
+    <div class="input-row">
+      <input id="userInput" type="text" placeholder="Type your message..." autofocus />
+      <button id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:1rem;color:#475569;font-size:0.75rem;border-top:1px solid #1e293b;">
+    nexagaze project &mdash; built by Founder Bilal &bull;
+    <a href="mailto:ai@nexagaze.com" style="color:#64748b;">ai@nexagaze.com</a> &bull;
+    <a href="https://wa.me/9203103860653" style="color:#64748b;">03103860653</a>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@xenova/transformers": "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { pipeline, env } from '@xenova/transformers';
+    env.allowLocalModels = false;
+    env.allowRemoteModels = true;
+
+    const statusEl = document.getElementById('status');
+    const progressBar = document.getElementById('progressBar');
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    let generator = null;
+
+    async function initModel() {
+      try {
+        generator = await pipeline('text2text-generation', 'Xenova/flan-t5-small', {
+          progress_callback: (progress) => {
+            if (progress.status === 'download') {
+              if (progress.total) {
+                const pct = Math.round((progress.loaded / progress.total) * 100);
+                statusEl.textContent = `Downloading... ${pct}%`;
+                progressBar.style.width = pct + '%';
+              } else {
+                statusEl.textContent = `Downloading... ${Math.round(progress.loaded / 1024)} KB`;
+              }
+            }
+          }
+        });
+        statusEl.textContent = 'System Ready';
+        statusEl.className = 'status ready';
+        progressBar.style.width = '100%';
+        sendBtn.disabled = false;
+      } catch (err) {
+        statusEl.textContent = 'Model failed to load. Check console.';
+        statusEl.className = 'status';
+        console.error(err);
+      }
+    }
+
+    function addMessage(text, type) {
+      const div = document.createElement('div');
+      div.className = `msg ${type}-msg`;
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text || !generator) return;
+      userInput.value = '';
+      addMessage(text, 'user');
+      statusEl.textContent = 'Thinking...';
+      statusEl.className = 'status thinking';
+      sendBtn.disabled = true;
+      try {
+        const result = await generator(text, { max_new_tokens: 60 });
+        const reply = result[0].generated_text;
+        addMessage(reply, 'ai');
+      } catch (err) {
+        addMessage('Error: ' + err.message, 'ai');
+      }
+      statusEl.textContent = 'System Ready';
+      statusEl.className = 'status ready';
+      sendBtn.disabled = false;
+      userInput.focus();
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    initModel();
+  </script>
+</body>
+</html>
