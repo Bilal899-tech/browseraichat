@@ -3,36 +3,88 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexagaze AI Chat</title>
+  <title>Nexagaze AI Chat - Local Intelligence</title>
   <meta name="author" content="Founder Bilal - nexagaze">
   <meta name="keywords" content="browser AI chat, Transformers.js, client-side AI chatbot, flan-t5-small, machine learning, nexagaze, bilal, AI, open source, behavior tracking">
   <link rel="icon" href="data:,">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #0f172a; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-    .container { background: #1e293b; padding: 2rem; border-radius: 16px; width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-    h2 { color: #38bdf8; text-align: center; margin-bottom: 1.5rem; font-size: 1.5rem; }
-    .status { text-align: center; color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem; }
-    .status.loading { color: #facc15; }
-    .status.ready { color: #22c55e; }
-    .status.thinking { color: #38bdf8; }
-    .chat-box { background: #0f172a; border-radius: 10px; padding: 1rem; height: 260px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    body { background: #ffffff; color: #1a1a1a; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; }
+    .hero { text-align: center; margin-bottom: 2rem; max-width: 420px; width: 100%; }
+    .hero h1 { font-size: 2rem; color: #16a34a; margin-bottom: 0.5rem; }
+    .hero .subtitle { color: #6b7280; font-size: 1rem; margin-bottom: 0.75rem; }
+    .bubble-row { display: flex; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; }
+    .bubble { padding: 0.4rem 0.9rem; border-radius: 16px; font-size: 0.75rem; font-weight: 500; animation: float 3s ease-in-out infinite; }
+    .bubble:nth-child(1) { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; animation-delay: 0s; }
+    .bubble:nth-child(2) { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; animation-delay: 0.5s; }
+    .bubble:nth-child(3) { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; animation-delay: 1s; }
+    .container { background: #f9fafb; padding: 2rem; border-radius: 16px; width: 420px; max-width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
+    h2 { color: #16a34a; text-align: center; margin-bottom: 1.5rem; font-size: 1.5rem; }
+    .status { text-align: center; color: #6b7280; font-size: 0.85rem; margin-bottom: 1rem; }
+    .status.loading { color: #f59e0b; }
+    .status.ready { color: #16a34a; }
+    .status.thinking { color: #22c55e; }
+    .chat-box { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem; height: 260px; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .chat-box .msg { padding: 0.5rem 0.75rem; border-radius: 8px; max-width: 85%; word-wrap: break-word; white-space: pre-wrap; }
-    .chat-box .user-msg { background: #38bdf8; color: #0f172a; align-self: flex-end; }
-    .chat-box .ai-msg { background: #334155; color: #e2e8f0; align-self: flex-start; }
-    .progress-wrap { height: 6px; background: #0f172a; border-radius: 4px; margin-bottom: 1rem; overflow: hidden; }
-    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #22c55e); border-radius: 4px; transition: width 0.3s ease; }
+    .chat-box .user-msg { background: #22c55e; color: #ffffff; align-self: flex-end; }
+    .chat-box .ai-msg { background: #f0fdf4; color: #1a1a1a; align-self: flex-start; border: 1px solid #bbf7d0; }
+    .progress-wrap { height: 6px; background: #e5e7eb; border-radius: 4px; margin-bottom: 1rem; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 4px; transition: width 0.3s ease; }
     .input-row { display: flex; gap: 0.5rem; }
-    .input-row input { flex: 1; padding: 0.7rem 1rem; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #e2e8f0; outline: none; font-size: 0.9rem; }
-    .input-row input:focus { border-color: #38bdf8; }
-    .input-row button { padding: 0.7rem 1.4rem; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    .input-row button:hover { background: #0ea5e9; }
+    .input-row input { flex: 1; padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #ffffff; color: #1a1a1a; outline: none; font-size: 0.9rem; }
+    .input-row input:focus { border-color: #22c55e; }
+    .input-row button { padding: 0.7rem 1.4rem; background: #22c55e; color: #ffffff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .input-row button:hover { background: #16a34a; }
     .input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .footer { text-align: center; padding: 1rem; color: #9ca3af; font-size: 0.75rem; border-top: 1px solid #e5e7eb; margin-top: 1.5rem; max-width: 420px; width: 100%; }
+    .footer a { color: #22c55e; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-15px); } }
+    .fade-in { opacity:0; transform:translateY(30px); transition:all 0.6s ease-out; }
+    .fade-in.visible { opacity:1; transform:translateY(0); }
+    .nav { animation: navslide 0.6s ease-out 0.2s both; }
+    @keyframes navslide { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Nexagaze AI Chat</h2>
+<style>
+#nexasplash {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: #ffffff; z-index: 99999;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  animation: nexafade 0.6s ease-out 1.5s forwards;
+}
+#nexasplash .nx-logo {
+  font-size: 48px; font-weight: 900; color: #ea580c;
+  letter-spacing: 3px; font-family: system-ui, -apple-system, sans-serif;
+  animation: nxpop 0.5s ease-out;
+}
+#nexasplash .nx-sub {
+  font-size: 13px; color: #9ca3af; margin-top: 8px;
+  letter-spacing: 5px; text-transform: uppercase;
+}
+@keyframes nexafade { to { opacity: 0; pointer-events: none; } }
+@keyframes nxpop { 0% { opacity: 0; transform: scale(0.5); } 70% { transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
+</style>
+<div id="nexasplash">
+  <div class="nx-logo">NEXAGAZE</div>
+  <div class="nx-sub">AI-Powered Solutions</div>
+</div>
+  <div class="hero fade-in">
+    <h1>Nexagaze AI Chat</h1>
+    <p class="subtitle">Local Intelligence — Powered by Transformers.js</p>
+    <div class="bubble-row">
+      <div class="bubble">Hello!</div>
+      <div class="bubble">Ask me anything</div>
+      <div class="bubble">100% Local</div>
+    </div>
+  </div>
+
+  <div class="container fade-in">
+    <h2>AI Chat</h2>
     <p id="status" class="status loading">Loading model...</p>
     <div class="progress-wrap"><div id="progressBar" class="progress-bar"></div></div>
     <div id="chatBox" class="chat-box">
@@ -44,10 +96,10 @@
     </div>
   </div>
 
-  <div style="text-align:center;padding:1rem;color:#475569;font-size:0.75rem;border-top:1px solid #1e293b;">
-    nexagaze project &mdash; built by Founder Bilal &bull;
-    <a href="mailto:ai@nexagaze.com" style="color:#64748b;">ai@nexagaze.com</a> &bull;
-    <a href="https://wa.me/9203103860653" style="color:#64748b;">03103860653</a>
+  <div class="footer">
+    Nexagaze &mdash; built by Founder Bilal &bull;
+    <a href="mailto:ai@nexagaze.com">ai@nexagaze.com</a> &bull;
+    <a href="https://wa.me/9203103860653">03103860653</a>
   </div>
 
   <script type="importmap">
@@ -129,6 +181,11 @@
     userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
 
     initModel();
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
   </script>
 </body>
 </html>
